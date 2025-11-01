@@ -1,0 +1,27 @@
+public/script.js
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const sym = document.getElementById('symbolInput').value.trim();
+  const resDiv = document.getElementById('result');
+  if (!sym) {
+    resDiv.innerHTML = '<p>Please enter a symbol</p>';
+    return;
+  }
+  resDiv.innerHTML = '<p>Loading...</p>';
+  try {
+    const r = await fetch(`/api/quote?symbol=${sym}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    resDiv.innerHTML = `
+      <div class='card'>
+        <h2>${d.name} (${d.symbol})</h2>
+        <p><b>Price:</b> ${d.price} ${d.currency}</p>
+        <p><b>Market Cap:</b> ${d.marketCap?.toLocaleString()}</p>
+        <p><b>EPS:</b> ${d.eps}</p>
+        <p><b>P/E:</b> ${d.pe}</p>
+        <p><b>Volume:</b> ${d.volume?.toLocaleString()}</p>
+        <p class='grade'>Grade: <span class='${d.grade}'>${d.grade}</span></p>
+      </div>`;
+  } catch (e) {
+    resDiv.innerHTML = `<p class='error'>${e.message}</p>`;
+  }
+});
