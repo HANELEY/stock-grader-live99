@@ -1,29 +1,47 @@
-const express = require("express");
-const axios = require("axios");
+import express from "express";
+import yahooFinance from "yahoo-finance2";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(cors());
+app.use(express.static("public"));
+const port = process.env.PORT || 10000;
 
-app.get("/", (req, res) => {
-  res.send("✅ Stock Grader API is running!");
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.get("/stock/:ticker", async (req, res) => {
-  const ticker = req.params.ticker.toUpperCase();
+// API route to fetch stock data
+app.get("/api/quote", async (req, res) => {
+  const symbol = req.query.symbol;
+  if (!symbol) return res.status(400).json({ error: "Symbol is required" });
+
   try {
-    const response = await axios.get(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${ticker}?modules=price`);
-    const data = response.data.quoteSummary.result[0].price;
+    const quote = await yahooFinance.quote(symbol);
+    if (!quote) return res.status(404).json({ error: "Symbol not found" });
+
+    // grading logic
+    let grade = "C";
+    if (quote.trailingPE && quote.trailingPE < 15) grade = "A";
+    else if (quote.trailingPE < 25) grade = "B";
+    else if (quote.trailingPE < 40) grade = "C";
+    else grade = "D";
 
     res.json({
-      ticker: data.symbol,
-      name: data.longName,
-      exchange: data.exchangeName,
-      currency: data.currency,
-      price: data.regularMarketPrice.raw,
-      marketCap: data.marketCap ? data.marketCap.fmt : "N/A"
+      symbol: quote.symbol,
+      name: quote.longName,
+      price: quote.regularMarketPrice,
+      marketCap: quote.marketCap,
+      volume: quote.regularMarketVolume,
+      pe: quote.trailingPE,
+      eps: quote.epsTrailingTwelveMonths,
+      grade: grade,
+      currency: quote.currency,
     });
-  } catch (error) {
-    res.status(404).json({ error: "Ticker not found or invalid." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(port, () => console.log(`🚀 Server running on port ${port}`));

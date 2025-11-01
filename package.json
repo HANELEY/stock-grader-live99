@@ -1,12 +1,14 @@
 {
-  "name": "stock-grader",
+  "name": "stock-grader-v2-darkmode",
   "version": "1.0.0",
+  "description": "Stock Grader with live Yahoo Finance data (US + Malaysia)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "axios": "^1.5.0"
+    "yahoo-finance2": "^2.3.4",
+    "cors": "^2.8.5"
   }
 }
